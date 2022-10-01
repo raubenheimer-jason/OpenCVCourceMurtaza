@@ -8,8 +8,13 @@ using namespace std;
 
 // Summary
 /*
-Importing images
+Images
+Video
+Webcam
 */
+
+/*
+// Images
 
 void main()
 {
@@ -17,4 +22,40 @@ void main()
 	Mat img = imread(path);
 	imshow("Image", img);
 	waitKey(0);
+}
+*/
+
+
+/*
+// Video
+
+void main()
+{
+	string path = "Resources/test_video.mp4";
+	VideoCapture cap(path);
+	Mat img;
+
+	while (true)
+	{
+		cap.read(img);
+		imshow("Image", img);
+		waitKey(1); // 1ms
+	}
+}
+*/
+
+
+// Webcam
+
+void main()
+{
+	VideoCapture cap(0); // imput camera id
+	Mat img;
+
+	while (true)
+	{
+		cap.read(img);
+		imshow("Image", img);
+		waitKey(1); // 1ms
+	}
 }
