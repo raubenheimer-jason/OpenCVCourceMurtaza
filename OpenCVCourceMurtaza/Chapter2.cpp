@@ -19,7 +19,7 @@ void main()
 
 	// Blur
 	Mat imgBlur;
-	GaussianBlur(img, imgBlur, Size(3, 3), 3, 0); // kernal=3x3, 
+	GaussianBlur(imgGrey, imgBlur, Size(3, 3), 3, 0); // kernal=3x3, 
 
 	// Edge detection
 	Mat imgCanny;
