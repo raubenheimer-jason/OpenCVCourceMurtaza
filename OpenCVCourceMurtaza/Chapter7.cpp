@@ -43,12 +43,12 @@ void getContours(Mat imgDia, Mat img)
 	//drawContours(img, contours, -1, Scalar(255, 0, 255), 2);
 
 	vector<Rect> boundRect(contours.size());
+	vector<vector<Point>> conPoly(contours.size()); // only corner points
 
 	for (size_t i{}; i < contours.size(); ++i)
 	{
 		auto area = contourArea(contours.at(i));
 		cout << area << endl;
-		vector<vector<Point>> conPoly(contours.size()); // only corner points
 		string objectType{};
 
 		if (area > 1000)
