@@ -11,9 +11,13 @@ using namespace std;
 Mat preProcessing(Mat img);
 vector<Point> getContours(Mat imgDia);
 void drawPoints(vector<Point>& points, Scalar color);
+vector<Point> reorder(vector<Point> initialPoints);
+Mat getWarp(Mat imgOriginal, vector<Point> docPoints, float w, float h);
 
-Mat imgOriginal, imgGrey, imgCanny, imgThre, imgBlur, imgDia;
-vector<Point> initialPoints;
+Mat imgOriginal, imgGrey, imgCanny, imgThre, imgBlur, imgDia, imgWarp, imgCrop;
+vector<Point> initialPoints, docPoints;
+
+float w{ 420 }, h{ 596 };
 
 void main()
 {
@@ -21,21 +25,63 @@ void main()
 	imgOriginal = imread(path);
 
 	// scale image
-	resize(imgOriginal, imgOriginal, Size(), 0.5, 0.5);
+	//resize(imgOriginal, imgOriginal, Size(), 0.5, 0.5); // only for testing
 
 	// Preprocessing
 	imgThre = preProcessing(imgOriginal);
 
 	// Get contours (assume biggest rectangle is the paper)
 	initialPoints = getContours(imgThre);
-	drawPoints(initialPoints, Scalar(0, 0, 255));
-	// Warp
+	docPoints = reorder(initialPoints);
+	//drawPoints(docPoints, Scalar(0, 0, 255));
 
+	// Warp
+	imgWarp = getWarp(imgOriginal, docPoints, w, h); // w and h of the A4 paper
+
+	// Crop
+	int cropVal{ 5 };
+	Rect roi(cropVal, cropVal, w - (2 * cropVal), h - (2 * cropVal)); // 3:42 in video
+	imgCrop = imgWarp(roi);
 
 	imshow("Image", imgOriginal);
-	imshow("Image Dialation", imgThre);
+	//imshow("Image Dialation", imgThre);
+	//imshow("Image Warp", imgWarp);
+	imshow("Image Crop", imgCrop);
+
 	waitKey(0);
 }
+
+Mat getWarp(Mat imgOriginal, vector<Point> docPoints, float w, float h)
+{
+	Point2f src[4] = { docPoints.at(0), docPoints.at(1), docPoints.at(2), docPoints.at(3) };
+	Point2f dst[4] = { {0.0f,0.0f}, {w,0.0f}, {0.0f,h}, {w,h} };
+
+	Mat matrix = getPerspectiveTransform(src, dst);
+	warpPerspective(imgOriginal, imgWarp, matrix, Point(w, h));
+
+	return imgWarp;
+}
+
+
+vector<Point> reorder(vector<Point> initialPoints)
+{
+	vector<Point> newPoints;
+	vector<int> sumPoints, subPoints;
+
+	for (auto& p : initialPoints)
+	{
+		sumPoints.push_back(p.x + p.y);
+		subPoints.push_back(p.x - p.y);
+	}
+
+	newPoints.push_back(initialPoints.at(min_element(sumPoints.begin(), sumPoints.end()) - sumPoints.begin())); // index 0
+	newPoints.push_back(initialPoints.at(max_element(subPoints.begin(), subPoints.end()) - subPoints.begin())); // index 1
+	newPoints.push_back(initialPoints.at(min_element(subPoints.begin(), subPoints.end()) - subPoints.begin())); // index 2
+	newPoints.push_back(initialPoints.at(max_element(sumPoints.begin(), sumPoints.end()) - sumPoints.begin())); // index 3
+
+	return newPoints;
+}
+
 
 void drawPoints(vector<Point>& points, Scalar color)
 {
@@ -82,9 +128,9 @@ vector<Point> getContours(Mat imgDia)
 
 	//Point myPoint(0, 0);
 	vector<Point> biggest;
-	int maxArea{};
+	double maxArea{};
 
-	for (size_t i{}; i < contours.size(); ++i)
+	for (int i{}; i < contours.size(); ++i)
 	{
 		auto area = contourArea(contours.at(i));
 		//cout << area << endl;
@@ -97,7 +143,7 @@ vector<Point> getContours(Mat imgDia)
 
 			if (area > maxArea && conPoly.at(i).size() == 4) // also check if it is a rect
 			{
-				drawContours(imgOriginal, conPoly, i, Scalar(255, 0, 255), 3);
+				//drawContours(imgOriginal, conPoly, i, Scalar(255, 0, 255), 3);
 				biggest = { conPoly.at(i).at(0), conPoly.at(i).at(1), conPoly.at(i).at(2), conPoly.at(i).at(3) };
 				maxArea = area;
 			}
